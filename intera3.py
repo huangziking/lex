@@ -1,14 +1,12 @@
-INTEGER,PLUS,MINUS,EOF,Multiply,excep='INTEGER','PLUS','MINUS','EOF','Multiply','excep'
+INTEGER,PLUS,MINUS,EOF='INTEGER','PLUS','MINUS','EOF'
 class Token(object):
     def __init__(self,type,value):
-        #token type:INTEGER,PLUS,MINUS,or EOF
         self.type=type
         self.value=value
     def __str__(self):
-        return 'Token({type},{value})'.format(type=self.type,value=repr(self.value))
+        return  'Token({type},{value})'.format(type=self.type,value=repr(self.value))
     def __repr__(self):
         return self.__str__()
-
 class Interpreter(object):
     def __init__(self,text):
         self.text=text
@@ -16,14 +14,14 @@ class Interpreter(object):
         self.current_token=None
         self.current_char=self.text[self.pos]
     def error(self):
-        raise Exception('Error parsing input')
+        raise  Exception('Invalid syntax')
     def advance(self):
         self.pos+=1
         if self.pos>len(self.text)-1:
             self.current_char=None
         else:
             self.current_char=self.text[self.pos]
-    def skip_witespace(self):
+    def skip_whitespace(self):
         while self.current_char is not None and self.current_char.isspace():
             self.advance()
     def integer(self):
@@ -35,7 +33,7 @@ class Interpreter(object):
     def get_next_token(self):
         while self.current_char is not None:
             if self.current_char.isspace():
-                self.skip_witespace()
+                self.skip_whitespace()
                 continue
             if self.current_char.isdigit():
                 return Token(INTEGER,self.integer())
@@ -45,42 +43,31 @@ class Interpreter(object):
             if self.current_char=='-':
                 self.advance()
                 return Token(MINUS,'-')
-            if self.current_char=='*':
-                self.advance()
-                return Token(Multiply,'*')
-            if self.current_char=='/':
-                self.advance()
-                return Token(excep,'/')
             self.error()
         return Token(EOF,None)
-    def eat(self,token_tpye):
-        if self.current_token.type==token_tpye:
+    def eat(self,token_type):
+        if self.current_token.type==token_type:
             self.current_token=self.get_next_token()
         else:
             self.error()
+    def term(self):
+        token=self.current_token
+        self.eat(INTEGER)
+        return token.value
     def expr(self):
         self.current_token=self.get_next_token()
-        left=self.current_token
-        self.eat(INTEGER)
-        op=self.current_token
-        if op.type==PLUS:
-            self.eat(PLUS)
-        if op.type==MINUS:
-            self.eat(MINUS)
-        if op.type==Multiply:
-            self.eat(Multiply)
-        if op.type==excep:
-            self.eat(excep)
-        right=self.current_token
-        self.eat(INTEGER)
-        if op.type==PLUS:
-            result=left.value+right.value
-        if op.type==MINUS:
-            result=left.value-right.value
-        if op.type==Multiply:
-            result=left.value*right.value
-        if op.type==excep:
-            result=left.value/right.value
+        result=self.term()
+        #print(result)
+        while self.current_token.type in (PLUS,MINUS):
+            token = self.current_token
+            if token.type==PLUS:
+                self.eat(PLUS)
+                result=result+self.term()
+                #print(result)
+            elif token.type==MINUS:
+                self.eat(MINUS)
+                result=result-self.term()
+                #print(result)
         return result
 def main():
         while True:
@@ -94,4 +81,4 @@ def main():
             result=interpreter.expr()
             print(result)
 if __name__=='__main__':
-    main()
+        main()
